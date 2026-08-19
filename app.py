@@ -123,9 +123,9 @@ section[data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked)
 section[data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) p {
     color: #FFFFFF !important;
 }
-/* 隐藏单选圆圈，纯菜单观感 */
-section[data-testid="stSidebar"] div[role="radiogroup"] label > div:first-of-type {
-    display: none !important;
+/* Keep Streamlit's radio labels visible across deployed DOM versions. */
+section[data-testid="stSidebar"] div[role="radiogroup"] label input {
+    accent-color: #D95D43;
 }
 
 /* ── 侧边栏通用字体放大 ── */
