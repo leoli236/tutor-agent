@@ -1,0 +1,22 @@
+# 数据
+/*/.streamlit/secrets.toml
+
+# 环境数据
+data/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Bat 脚本（仅供 Windows 本地使用）
+*.bat
