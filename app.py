@@ -379,7 +379,7 @@ hr {
 .stApp { background: #F7F8FA !important; color: #25313C; }
 .stApp > header { background: #F7F8FA !important; }
 #MainMenu, footer { display: none !important; }
-[data-testid="stToolbar"] { visibility: hidden; height: 0; }
+/* Keep Streamlit's toolbar visible: it contains the sidebar toggle on collapsed layouts. */
 
 section[data-testid="stSidebar"] {
     background: #F1F3F5 !important;
@@ -485,7 +485,12 @@ def render_metric_card(container, emoji, label, value, color="#F4A261"):
 #  页面配置
 # ══════════════════════════════════════════════════════════════
 
-st.set_page_config(page_title="AI 家教工作台", page_icon="🏠", layout="wide")
+st.set_page_config(
+    page_title="AI 家教工作台",
+    page_icon="🏠",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 inject_css()
 
 if "current_student" not in st.session_state:
