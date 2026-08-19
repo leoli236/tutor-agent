@@ -10,9 +10,10 @@ import json
 import os
 import httpx
 
-from config import ZHIPU_API_KEY, VISION_MODEL, TEXT_MODEL
+from config import (ZHIPU_API_KEY, VISION_MODEL, TEXT_MODEL, LLM_BASE_URL,
+                    LLM_PROVIDER, OPENROUTER_HTTP_REFERER, OPENROUTER_APP_TITLE)
 
-BASE_URL = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
+BASE_URL = LLM_BASE_URL
 TIMEOUT = 60
 
 
@@ -27,12 +28,22 @@ def _call_api(model, messages, temperature=0.7, max_tokens=2048, response_format
     if response_format:
         payload["response_format"] = response_format
 
+    if not ZHIPU_API_KEY or ZHIPU_API_KEY == "your_api_key_here":
+        raise RuntimeError("未配置大模型 API Key，请在 Streamlit Secrets 中设置 OPENROUTER_API_KEY")
+
     headers = {
         "Authorization": f"Bearer {ZHIPU_API_KEY}",
         "Content-Type": "application/json",
     }
+    if LLM_PROVIDER.lower() == "openrouter":
+        if OPENROUTER_HTTP_REFERER:
+            headers["HTTP-Referer"] = OPENROUTER_HTTP_REFERER
+        headers["X-Title"] = OPENROUTER_APP_TITLE
 
     resp = httpx.post(BASE_URL, headers=headers, json=payload, timeout=TIMEOUT)
+    if resp.status_code == 400 and response_format:
+        payload.pop("response_format", None)
+        resp = httpx.post(BASE_URL, headers=headers, json=payload, timeout=TIMEOUT)
     resp.raise_for_status()
     data = resp.json()
     return data["choices"][0]["message"]["content"]
