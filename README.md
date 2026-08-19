@@ -80,7 +80,7 @@ tutor_agent/
 ## 自定义扩展
 
 - 换用其他大模型：修改 `agent/llm_client.py` 中的 API 地址和调用格式
-- 增加学科：修改 `config.py` 中的 `SUBJECTS` 列表
+- 增加学科：在左侧「管理辅导学科」中直接添加；内置语文、数学、英语、物理、化学、生物、历史、地理、政治、科学、信息技术等常见学科
 - 调整辅导风格：修改 `agent/tutor.py` 中的 `TUTOR_SYSTEM_PROMPT`
 - 增加用户认证：Streamlit 支持 `st.session_state` 管理登录态
 - 部署上线：`streamlit deploy` 或 Docker + Nginx

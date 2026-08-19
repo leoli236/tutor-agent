@@ -17,7 +17,7 @@ import os
 import json
 from datetime import datetime, timedelta
 
-from config import DB_PATH
+from config import DB_PATH, SUBJECTS as DEFAULT_SUBJECTS
 
 
 def get_db():
@@ -33,6 +33,13 @@ def get_db():
 
 def _init_tables(conn):
     conn.executescript("""
+    CREATE TABLE IF NOT EXISTS subjects (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        name        TEXT NOT NULL UNIQUE,
+        is_default  INTEGER DEFAULT 0,
+        created_at  TEXT DEFAULT (datetime('now', 'localtime'))
+    );
+
     CREATE TABLE IF NOT EXISTS students (
         id          INTEGER PRIMARY KEY AUTOINCREMENT,
         name        TEXT NOT NULL,
@@ -118,6 +125,13 @@ def _init_tables(conn):
     );
     """)
 
+    for subject in DEFAULT_SUBJECTS:
+        conn.execute(
+            "INSERT OR IGNORE INTO subjects (name, is_default) VALUES (?, 1)",
+            (subject,),
+        )
+    conn.commit()
+
     # 兼容迁移：如果 hourly_rate 列不存在则添加
     try:
         conn.execute("SELECT hourly_rate FROM students LIMIT 1")
@@ -171,6 +185,41 @@ def update_student(student_id, **kwargs):
     db.execute(f"UPDATE students SET {', '.join(sets)} WHERE id = ?", vals)
     db.commit()
     db.close()
+
+
+def list_subjects():
+    """Return configured subjects, keeping defaults before custom subjects."""
+    db = get_db()
+    rows = db.execute(
+        "SELECT name FROM subjects ORDER BY is_default DESC, name COLLATE NOCASE"
+    ).fetchall()
+    db.close()
+    return [r["name"] for r in rows]
+
+
+def add_subject(name):
+    name = (name or "").strip()
+    if not name:
+        return False
+    db = get_db()
+    try:
+        db.execute("INSERT INTO subjects (name, is_default) VALUES (?, 0)", (name,))
+        db.commit()
+        return True
+    except sqlite3.IntegrityError:
+        return False
+    finally:
+        db.close()
+
+
+def delete_subject(name):
+    """Delete only custom subjects; historical records remain intact."""
+    db = get_db()
+    cur = db.execute("DELETE FROM subjects WHERE name = ? AND is_default = 0", (name,))
+    db.commit()
+    deleted = cur.rowcount > 0
+    db.close()
+    return deleted
 
 
 # ── 错题 CRUD ──────────────────────────────────────────────────

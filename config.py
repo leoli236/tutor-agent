@@ -64,7 +64,10 @@ DB_PATH = os.path.join(_DATA_DIR, "tutor.db")
 UPLOAD_DIR = os.path.join(_DATA_DIR, "uploads")
 
 # 学科列表
-SUBJECTS = ["数学", "英语", "Python编程"]
+SUBJECTS = [
+    "语文", "数学", "英语", "物理", "化学", "生物", "历史", "地理",
+    "道德与法治", "政治", "科学", "信息技术", "Python编程", "音乐", "美术",
+]
 
 # 错误类型
 ERROR_TYPES = [

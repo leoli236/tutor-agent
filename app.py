@@ -34,6 +34,12 @@ from agent.llm_client import chat_text_json
 from config import SUBJECTS, GRADES, UPLOAD_DIR
 
 
+def get_subject_options():
+    """Load subjects from persistent settings so every page stays in sync."""
+    options = db.list_subjects()
+    return options or SUBJECTS
+
+
 # ══════════════════════════════════════════════════════════════
 #  全局样式
 # ══════════════════════════════════════════════════════════════
@@ -537,7 +543,7 @@ def render_sidebar():
     with st.sidebar.expander("➕ 添加新学生", expanded=False):
         name = st.text_input("姓名", key="new_name", placeholder="输入学生姓名")
         grade = st.selectbox("年级", GRADES, key="new_grade")
-        subjects = st.multiselect("辅导学科", SUBJECTS, key="new_subjects")
+        subjects = st.multiselect("辅导学科", get_subject_options(), key="new_subjects")
         rate = st.number_input("课时费（元/课时）", min_value=0, value=100, step=50, key="new_rate")
         if st.button("✨ 添加学生", key="add_btn", use_container_width=True):
             if name.strip():
@@ -545,6 +551,27 @@ def render_sidebar():
                 st.session_state.current_student = sid
                 st.success(f"🎉 已添加：{name}")
                 st.rerun()
+
+    with st.sidebar.expander("⚙️ 管理辅导学科", expanded=False):
+        current_subjects = get_subject_options()
+        custom_name = st.text_input("新增学科名称", key="custom_subject_name", placeholder="例如：日语、书法、机器人")
+        if st.button("添加学科", key="add_subject_btn", use_container_width=True):
+            if db.add_subject(custom_name):
+                st.success(f"已添加学科：{custom_name.strip()}")
+                st.rerun()
+            elif custom_name.strip() in current_subjects:
+                st.warning("该学科已经存在")
+            else:
+                st.warning("请输入学科名称")
+        custom_subjects = [s for s in current_subjects if s not in SUBJECTS]
+        if custom_subjects:
+            st.caption("自定义学科")
+            for custom in custom_subjects:
+                c_name, c_del = st.columns([4, 1])
+                c_name.write(custom)
+                if c_del.button("×", key=f"delete_subject_{custom}"):
+                    db.delete_subject(custom)
+                    st.rerun()
 
     students = db.list_students()
     if students:
@@ -670,7 +697,7 @@ def render_wrong_question_input():
             st.image(Image.open(uploaded), use_column_width=True)
     with col_right:
         st.markdown("### ℹ️ 补充信息")
-        subject = st.selectbox("学科", SUBJECTS, key="wq_subj")
+        subject = st.selectbox("学科", get_subject_options(), key="wq_subj")
         hint = st.text_area("教师备注（可选）", key="wq_hint")
         correct_hint = st.text_area("参考答案（可选）", key="wq_correct")
 
@@ -743,7 +770,7 @@ def render_wrong_question_input():
     # 手动录入
     st.markdown("<hr>", unsafe_allow_html=True)
     with st.expander("⌨️ 没有照片？手动录入错题"):
-        m_subj = st.selectbox("学科", SUBJECTS, key="m_subj")
+        m_subj = st.selectbox("学科", get_subject_options(), key="m_subj")
         m_q = st.text_area("题目内容", key="m_q", height=80)
         m_a = st.text_area("学生答案", key="m_a", height=60)
         if st.button("💾 保存手动录入", key="m_save"):
@@ -1142,7 +1169,7 @@ def render_notes():
         st.markdown("### 💾 存入资料库")
         c1, c2, c3 = st.columns(3)
         with c1:
-            sv_subj = st.selectbox("学科", SUBJECTS + ["语文"], key="note_sv_subj")
+            sv_subj = st.selectbox("学科", get_subject_options(), key="note_sv_subj")
         with c2:
             sv_grade = st.selectbox("年级", ["通用"] + GRADES, key="note_sv_grade")
         with c3:
@@ -1183,7 +1210,7 @@ def render_course_log():
         with c1:
             cr_date = st.date_input("📅 日期", datetime.now(), key="cr_date")
         with c2:
-            cr_subject = st.selectbox("📘 科目", SUBJECTS, key="cr_subj")
+            cr_subject = st.selectbox("📘 科目", get_subject_options(), key="cr_subj")
         with c3:
             cr_start = st.time_input("开始时间", datetime.now().replace(hour=19, minute=0), key="cr_start")
         with c4:
@@ -1363,7 +1390,7 @@ def render_materials():
     with st.expander("➕ 添加资料", expanded=False):
         c1, c2, c3 = st.columns(3)
         with c1:
-            m_subj = st.selectbox("学科", SUBJECTS + ["语文"], key="mat_subj")
+            m_subj = st.selectbox("学科", get_subject_options(), key="mat_subj")
         with c2:
             m_grade = st.selectbox("年级", ["通用"] + GRADES, key="mat_grade")
         with c3:
@@ -1391,7 +1418,7 @@ def render_materials():
     # 筛选
     c1, c2, c3 = st.columns(3)
     with c1:
-        f_subj = st.selectbox("筛选学科", ["全部"] + SUBJECTS + ["语文"], key="f_subj")
+        f_subj = st.selectbox("筛选学科", ["全部"] + get_subject_options(), key="f_subj")
     with c2:
         f_grade = st.selectbox("筛选年级", ["全部", "通用"] + GRADES, key="f_grade")
     with c3:
